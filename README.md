@@ -223,9 +223,52 @@ AllocationRule (自動分類ルール)
 2. `DATABASE_URL`を PostgreSQL の接続文字列に設定
 3. `npx prisma migrate deploy`を実行
 
-### SAML認証の設定
+### SAML認証の設定（Keycloakでテスト）
+
+#### 1. Keycloakの起動
+
+```bash
+docker compose up -d
+```
+
+Keycloak管理画面: http://localhost:8080
+- ユーザー名: `admin`
+- パスワード: `admin`
+
+#### 2. Keycloakの設定
+
+1. **Realmの作成**
+   - 左上の「master」→「Create Realm」
+   - Name: `timetracker`
+
+2. **Clientの作成**
+   - Clients → Create client
+   - Client ID: `timetracker-app`
+   - Client Protocol: `saml`
+   - Root URL: `http://localhost:3000`
+
+3. **SAML設定**
+   - Valid redirect URIs: `http://localhost:3000/*`
+   - Name ID Format: `email`
+   - Sign Documents: ON
+   - Sign Assertions: ON
+
+4. **テストユーザーの作成**
+   - Users → Add user
+   - Username, Email, First Name, Last Name を入力
+   - Credentials タブでパスワード設定
+
+#### 3. 環境変数の設定
 
 `.env`に以下を追加:
+
+```
+AUTH_KEYCLOAK_ID=timetracker-app
+AUTH_KEYCLOAK_SECRET=（Keycloakで生成されたシークレット）
+AUTH_KEYCLOAK_ISSUER=http://localhost:8080/realms/timetracker
+```
+
+#### 本番環境でのSAML設定
 
 ```
 SAML_IDP_METADATA_URL=https://your-idp/metadata

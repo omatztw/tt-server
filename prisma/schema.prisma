@@ -1,0 +1,106 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// 部署
+model Department {
+  id        String   @id @default(cuid())
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  users     User[]
+}
+
+// ユーザー（従業員）
+model User {
+  id           String    @id @default(cuid())
+  email        String    @unique
+  name         String?
+  departmentId String?
+  department   Department? @relation(fields: [departmentId], references: [id])
+  role         String      @default("member") // member, manager, admin
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  timeRecords     TimeRecord[]
+  timeAllocations TimeAllocation[]
+  allocationRules AllocationRule[]
+
+  @@index([departmentId])
+}
+
+// プロジェクト
+model Project {
+  id          String   @id @default(cuid())
+  name        String
+  code        String   @unique
+  description String?
+  isCapex     Boolean  @default(false) // 資産計上対象かどうか
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  timeAllocations TimeAllocation[]
+  allocationRules AllocationRule[]
+}
+
+// エージェントから送られてくる生データ
+model TimeRecord {
+  id               String   @id @default(cuid())
+  userId           String
+  user             User     @relation(fields: [userId], references: [id])
+  date             DateTime
+  processName      String
+  domain           String   @default("") // ブラウザの場合にドメインを記録、なければ空文字
+  totalSeconds     Int
+  machineName      String?
+  minDurationUsed  Int      @default(600) // フィルタリング閾値
+  createdAt        DateTime @default(now())
+
+  allocations TimeAllocation[]
+
+  @@unique([userId, date, processName, domain])
+  @@index([userId, date])
+}
+
+// プロジェクトへの仕分け結果
+model TimeAllocation {
+  id           String     @id @default(cuid())
+  userId       String
+  user         User       @relation(fields: [userId], references: [id])
+  timeRecordId String
+  timeRecord   TimeRecord @relation(fields: [timeRecordId], references: [id], onDelete: Cascade)
+  projectId    String
+  project      Project    @relation(fields: [projectId], references: [id])
+  seconds      Int        // 割り当てられた時間（秒）
+  isAutomatic  Boolean    @default(false) // 自動割り当てかどうか
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  @@index([userId, projectId])
+  @@index([timeRecordId])
+}
+
+// 自動仕分けルール（同じ種類のものは直近の仕分けと同じプロジェクトが自動で割り当てられる）
+model AllocationRule {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  processName String
+  domain      String   @default("") // 空文字はドメインなしを意味する
+  projectId   String
+  project     Project  @relation(fields: [projectId], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([userId, processName, domain])
+  @@index([userId])
+}

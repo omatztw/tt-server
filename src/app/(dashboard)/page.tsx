@@ -50,22 +50,22 @@ export default async function DashboardPage() {
         <StatCard title="プロジェクト数" value={stats.totalProjects} />
         <StatCard title="今週の記録数" value={stats.recentRecords} />
         <StatCard
-          title="未仕分け"
+          title="未分類"
           value={stats.unallocatedCount}
           highlight={stats.unallocatedCount > 0}
         />
       </div>
 
-      {/* 未仕分けへのリンク */}
+      {/* 未分類へのリンク */}
       {stats.unallocatedCount > 0 && (
         <div className="mb-8 rounded-lg border border-yellow-200 bg-yellow-50 p-4">
           <p className="text-yellow-800">
-            {stats.unallocatedCount}件の未仕分けデータがあります。
+            {stats.unallocatedCount}件の未分類データがあります。
             <Link
               href="/allocations"
               className="ml-2 font-medium underline hover:no-underline"
             >
-              仕分けする
+              分類する
             </Link>
           </p>
         </div>
@@ -84,7 +84,7 @@ export default async function DashboardPage() {
                 <th className="px-6 py-3">ユーザー</th>
                 <th className="px-6 py-3">アプリ</th>
                 <th className="px-6 py-3">時間</th>
-                <th className="px-6 py-3">仕分け</th>
+                <th className="px-6 py-3">分類</th>
               </tr>
             </thead>
             <tbody className="divide-y text-sm">
@@ -121,7 +121,7 @@ export default async function DashboardPage() {
                         </span>
                       ) : (
                         <span className="rounded-full bg-gray-100 px-2 py-1 text-xs text-gray-600">
-                          未仕分け
+                          未分類
                         </span>
                       )}
                     </td>

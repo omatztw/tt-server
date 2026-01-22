@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 
 const navigation = [
   { name: "ダッシュボード", href: "/" },
-  { name: "仕分け", href: "/allocations" },
+  { name: "分類", href: "/allocations" },
   { name: "プロジェクト", href: "/projects" },
   { name: "エクスポート", href: "/export" },
 ];

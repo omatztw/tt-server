@@ -32,11 +32,11 @@ export default async function AllocationsPage() {
 
   return (
     <div>
-      <h1 className="mb-8 text-2xl font-bold">仕分け</h1>
+      <h1 className="mb-8 text-2xl font-bold">分類</h1>
 
       {records.length === 0 ? (
         <div className="rounded-lg border bg-white p-8 text-center text-gray-500">
-          未仕分けのデータはありません
+          未分類のデータはありません
         </div>
       ) : (
         <div className="space-y-4">

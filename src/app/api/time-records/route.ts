@@ -32,7 +32,7 @@ export async function GET(request: NextRequest) {
       orderBy: [{ date: "desc" }, { totalSeconds: "desc" }],
     });
 
-    // 未仕分けのみフィルタ
+    // 未分類のみフィルタ
     if (unallocatedOnly) {
       records = records.filter((r) => r.allocations.length === 0);
     }

@@ -9,7 +9,7 @@ const AllocationSchema = z.object({
   saveAsRule: z.boolean().default(false), // 今後同じアプリに自動適用するか
 });
 
-// 仕分け結果を取得（日付とユーザーでフィルタ）
+// 分類結果を取得（日付とユーザーでフィルタ）
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
@@ -48,7 +48,7 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// 仕分けを作成/更新
+// 分類を作成/更新
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
@@ -94,7 +94,7 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    // 自動仕分けルールとして保存
+    // 自動分類ルールとして保存
     if (saveAsRule) {
       const domainKey = timeRecord.domain ?? "";
       await prisma.allocationRule.upsert({

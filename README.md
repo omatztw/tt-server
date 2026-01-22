@@ -1,12 +1,12 @@
 # TimeTracker Server
 
-従業員の作業時間を記録し、プロジェクト別に仕分けて資産化工数を算出するためのサーバーアプリケーション。
+従業員の作業時間を記録し、プロジェクト別に分類て資産化工数を算出するためのサーバーアプリケーション。
 
 ## 機能
 
 - デスクトップエージェントからアクティビティデータを受信
-- プロジェクト別の工数仕分け
-- 同じアプリ/ドメインの自動仕分けルール
+- プロジェクト別の工数分類
+- 同じアプリ/ドメインの自動分類ルール
 - 月次工数集計のExcelエクスポート
 - SAML認証対応（準備済み）
 - 部署単位でのデータ管理（将来対応）
@@ -72,10 +72,10 @@ Content-Type: application/json
 }
 ```
 
-### 3. 時間記録の仕分け
+### 3. 時間記録の分類
 
-1. サイドバーから「仕分け」を選択
-2. 未仕分けの記録が一覧表示される
+1. サイドバーから「分類」を選択
+2. 未分類の記録が一覧表示される
 3. 各記録に対してプロジェクトを選択
 4. 「自動適用」にチェックすると、同じアプリ/ドメインは次回から自動で同じプロジェクトに割り当て
 5. 「割当」をクリック
@@ -152,7 +152,7 @@ Content-Type: application/json
 **クエリパラメータ:**
 - `date`: 日付でフィルタ（YYYY-MM-DD）
 - `userId`: ユーザーIDでフィルタ
-- `unallocatedOnly`: `true`で未仕分けのみ
+- `unallocatedOnly`: `true`で未分類のみ
 
 ### POST /api/allocations
 
@@ -203,12 +203,12 @@ TimeRecord (時間記録)
 ├── totalSeconds, machineName
 └── unique: [userId, date, processName, domain]
 
-TimeAllocation (仕分け結果)
+TimeAllocation (分類結果)
 ├── id, userId, timeRecordId, projectId
 ├── seconds, isAutomatic
 └── 1つのTimeRecordに対して複数の割り当て可能
 
-AllocationRule (自動仕分けルール)
+AllocationRule (自動分類ルール)
 ├── id, userId, processName, domain, projectId
 └── unique: [userId, processName, domain]
 ```

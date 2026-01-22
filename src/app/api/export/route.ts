@@ -41,7 +41,7 @@ export async function GET(request: NextRequest) {
       where.userId = userId;
     }
 
-    // 仕分けされたデータを取得
+    // 分類されたデータを取得
     const allocations = await prisma.timeAllocation.findMany({
       where,
       include: {

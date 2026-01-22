@@ -59,7 +59,7 @@ export async function POST(request: NextRequest) {
     const recordDate = new Date(date);
     const createdRecords: string[] = [];
 
-    // 自動仕分けルールを取得
+    // 自動分類ルールを取得
     const rules = await prisma.allocationRule.findMany({
       where: { userId: user.id },
     });
@@ -97,7 +97,7 @@ export async function POST(request: NextRequest) {
 
       createdRecords.push(record.id);
 
-      // 自動仕分けルールが存在する場合は自動割り当て
+      // 自動分類ルールが存在する場合は自動割り当て
       const ruleKey = `${summary.process_name}:${summary.domain || ""}`;
       const projectId = rulesMap.get(ruleKey);
 

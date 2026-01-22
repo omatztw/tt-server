@@ -71,7 +71,7 @@ model TimeRecord {
   @@index([userId, date])
 }
 
-// プロジェクトへの仕分け結果
+// プロジェクトへの分類結果
 model TimeAllocation {
   id           String     @id @default(cuid())
   userId       String
@@ -89,7 +89,7 @@ model TimeAllocation {
   @@index([timeRecordId])
 }
 
-// 自動仕分けルール（同じ種類のものは直近の仕分けと同じプロジェクトが自動で割り当てられる）
+// 自動分類ルール（同じ種類のものは直近の分類と同じプロジェクトが自動で割り当てられる）
 model AllocationRule {
   id          String   @id @default(cuid())
   userId      String

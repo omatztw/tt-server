@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
+  const [loginId, setLoginId] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -17,6 +18,7 @@ export default function LoginPage() {
 
     const result = await signIn("credentials", {
       email,
+      loginId: loginId || undefined,
       redirect: false,
     });
 
@@ -47,14 +49,28 @@ export default function LoginPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="w-full rounded border px-3 py-2"
-              placeholder="user@example.com"
+              placeholder="tanaka.taro@company.com"
               required
             />
           </div>
 
-          {error && (
-            <p className="text-sm text-red-600">{error}</p>
-          )}
+          <div>
+            <label className="mb-1 block text-sm font-medium text-gray-700">
+              ログインID（任意）
+            </label>
+            <input
+              type="text"
+              value={loginId}
+              onChange={(e) => setLoginId(e.target.value)}
+              className="w-full rounded border px-3 py-2"
+              placeholder="emp001@company.com"
+            />
+            <p className="mt-1 text-xs text-gray-500">
+              WindowsログインIDと異なる場合に入力
+            </p>
+          </div>
+
+          {error && <p className="text-sm text-red-600">{error}</p>}
 
           <button
             type="submit"

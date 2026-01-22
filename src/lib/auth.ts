@@ -13,25 +13,57 @@ const config: NextAuthConfig = {
       name: "Credentials",
       credentials: {
         email: { label: "Email", type: "email" },
-        // 開発用なのでパスワードは不要
+        loginId: { label: "Login ID (optional)", type: "text" },
       },
       async authorize(credentials) {
         if (!credentials?.email) return null;
 
         const email = credentials.email as string;
+        const loginId = (credentials.loginId as string) || null;
 
-        // ユーザーを検索または作成
+        // メールアドレスでユーザーを検索
         let user = await prisma.user.findUnique({
           where: { email },
           include: { department: true },
         });
 
         if (!user) {
-          user = await prisma.user.create({
-            data: {
-              email,
-              name: email.split("@")[0],
-            },
+          // loginIdで既存ユーザーを検索（エージェントが先にデータを送った場合）
+          if (loginId) {
+            const existingUser = await prisma.user.findUnique({
+              where: { loginId },
+            });
+            if (existingUser) {
+              // placeholder.localのメールを本物のメールに更新
+              if (existingUser.email.endsWith("@placeholder.local")) {
+                user = await prisma.user.update({
+                  where: { id: existingUser.id },
+                  data: { email },
+                  include: { department: true },
+                });
+              } else {
+                // 既に別のメールが設定されている場合はエラー
+                return null;
+              }
+            }
+          }
+
+          // まだユーザーが見つからない場合は新規作成
+          if (!user) {
+            user = await prisma.user.create({
+              data: {
+                email,
+                loginId,
+                name: email.split("@")[0],
+              },
+              include: { department: true },
+            });
+          }
+        } else if (loginId && !user.loginId) {
+          // 既存ユーザーにloginIdを紐づけ
+          user = await prisma.user.update({
+            where: { id: user.id },
+            data: { loginId },
             include: { department: true },
           });
         }

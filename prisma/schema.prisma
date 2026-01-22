@@ -22,7 +22,8 @@ model Department {
 // ユーザー（従業員）
 model User {
   id           String    @id @default(cuid())
-  email        String    @unique
+  email        String    @unique            // メールアドレス（SAML認証で使用）
+  loginId      String?   @unique            // WindowsログインID（UPN形式、エージェントから送信される）
   name         String?
   departmentId String?
   department   Department? @relation(fields: [departmentId], references: [id])
@@ -35,6 +36,7 @@ model User {
   allocationRules AllocationRule[]
 
   @@index([departmentId])
+  @@index([loginId])
 }
 
 // プロジェクト

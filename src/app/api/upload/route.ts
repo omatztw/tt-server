@@ -35,22 +35,41 @@ export async function POST(request: NextRequest) {
     const { user_id, date, min_duration_seconds, app_summaries, machine_name } =
       parsed.data;
 
-    // ユーザーを検索または作成（UPNまたはSAM形式からメールアドレスを抽出）
-    const email = user_id.includes("@")
-      ? user_id
-      : user_id.includes("\\")
-        ? `${user_id.split("\\")[1]}@unknown.local`
-        : `${user_id}@unknown.local`;
+    // loginId（WindowsログインUPN）を正規化
+    const loginId = user_id.includes("\\")
+      ? user_id.split("\\")[1] // DOMAIN\user → user
+      : user_id;
 
+    // まずloginIdでユーザーを検索
     let user = await prisma.user.findUnique({
-      where: { email },
+      where: { loginId },
     });
 
+    // loginIdで見つからない場合、emailでも検索（後方互換性）
     if (!user) {
-      // 初回アップロード時にユーザーを自動作成
+      user = await prisma.user.findUnique({
+        where: { email: loginId },
+      });
+      // 見つかった場合、loginIdを設定
+      if (user && !user.loginId) {
+        user = await prisma.user.update({
+          where: { id: user.id },
+          data: { loginId },
+        });
+      }
+    }
+
+    // どちらでも見つからない場合は新規作成
+    if (!user) {
+      // 仮のメールアドレスを生成（SAML認証時に正しいメールに更新される）
+      const placeholderEmail = loginId.includes("@")
+        ? loginId
+        : `${loginId}@placeholder.local`;
+
       user = await prisma.user.create({
         data: {
-          email,
+          email: placeholderEmail,
+          loginId,
           name: user_id,
         },
       });

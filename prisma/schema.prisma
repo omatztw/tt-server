@@ -10,13 +10,35 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// 部署
+// 部署（階層構造対応）
 model Department {
   id        String   @id @default(cuid())
   name      String
+  parentId  String?
+  parent    Department?  @relation("DepartmentHierarchy", fields: [parentId], references: [id])
+  children  Department[] @relation("DepartmentHierarchy")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  users     User[]
+  members   DepartmentMember[]
+
+  @@index([parentId])
+}
+
+// 部署所属（兼務対応）
+model DepartmentMember {
+  id           String     @id @default(cuid())
+  userId       String
+  user         User       @relation(fields: [userId], references: [id])
+  departmentId String
+  department   Department @relation(fields: [departmentId], references: [id])
+  role         String     @default("member") // member, manager
+  isPrimary    Boolean    @default(false)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  @@unique([userId, departmentId])
+  @@index([departmentId])
+  @@index([userId])
 }
 
 // ユーザー（従業員）
@@ -25,17 +47,16 @@ model User {
   email        String    @unique            // メールアドレス（SAML認証で使用）
   loginId      String?   @unique            // WindowsログインID（UPN形式、エージェントから送信される）
   name         String?
-  departmentId String?
-  department   Department? @relation(fields: [departmentId], references: [id])
-  role         String      @default("member") // member, manager, admin
+  role         String      @default("member") // member, admin
   createdAt    DateTime    @default(now())
   updatedAt    DateTime    @updatedAt
 
-  timeRecords     TimeRecord[]
-  timeAllocations TimeAllocation[]
-  allocationRules AllocationRule[]
+  departmentMembers DepartmentMember[]
+  projectMembers    ProjectMember[]
+  timeRecords       TimeRecord[]
+  timeAllocations   TimeAllocation[]
+  allocationRules   AllocationRule[]
 
-  @@index([departmentId])
   @@index([loginId])
 }
 
@@ -50,8 +71,25 @@ model Project {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
+  members         ProjectMember[]
   timeAllocations TimeAllocation[]
   allocationRules AllocationRule[]
+}
+
+// プロジェクトメンバー
+model ProjectMember {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  projectId String
+  project   Project  @relation(fields: [projectId], references: [id])
+  role      String   @default("member") // member, lead
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, projectId])
+  @@index([projectId])
+  @@index([userId])
 }
 
 // エージェントから送られてくる生データ

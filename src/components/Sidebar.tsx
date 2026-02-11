@@ -7,6 +7,8 @@ const navigation = [
   { name: "ダッシュボード", href: "/" },
   { name: "分類", href: "/allocations" },
   { name: "プロジェクト", href: "/projects" },
+  { name: "部署", href: "/departments" },
+  { name: "チーム工数", href: "/team" },
   { name: "エクスポート", href: "/export" },
 ];
 

@@ -6,7 +6,9 @@ export async function GET() {
   try {
     const users = await prisma.user.findMany({
       include: {
-        department: true,
+        departmentMembers: {
+          include: { department: true },
+        },
       },
       orderBy: { name: "asc" },
     });

@@ -13,7 +13,13 @@ async function findOrCreateUser(
   // 1. emailでユーザーを検索
   let user = await prisma.user.findUnique({
     where: { email },
-    include: { department: true },
+    include: {
+      departmentMembers: {
+        include: { department: true },
+        where: { isPrimary: true },
+        take: 1,
+      },
+    },
   });
 
   if (user) {
@@ -22,7 +28,13 @@ async function findOrCreateUser(
       user = await prisma.user.update({
         where: { id: user.id },
         data: { loginId },
-        include: { department: true },
+        include: {
+          departmentMembers: {
+            include: { department: true },
+            where: { isPrimary: true },
+            take: 1,
+          },
+        },
       });
     }
     return user;
@@ -32,7 +44,13 @@ async function findOrCreateUser(
   if (loginId) {
     const existingUser = await prisma.user.findUnique({
       where: { loginId },
-      include: { department: true },
+      include: {
+        departmentMembers: {
+          include: { department: true },
+          where: { isPrimary: true },
+          take: 1,
+        },
+      },
     });
     if (existingUser) {
       // placeholder.localのメールを本物のメールに更新
@@ -40,7 +58,13 @@ async function findOrCreateUser(
         return await prisma.user.update({
           where: { id: existingUser.id },
           data: { email, name: name || existingUser.name },
-          include: { department: true },
+          include: {
+            departmentMembers: {
+              include: { department: true },
+              where: { isPrimary: true },
+              take: 1,
+            },
+          },
         });
       }
       // 既に別のメールが設定されている → そのまま返す（メールは変更しない）
@@ -55,8 +79,23 @@ async function findOrCreateUser(
       loginId,
       name: name || email.split("@")[0],
     },
-    include: { department: true },
+    include: {
+      departmentMembers: {
+        include: { department: true },
+        where: { isPrimary: true },
+        take: 1,
+      },
+    },
   });
+}
+
+// ユーザーが管理する部署IDを取得
+async function getManagedDepartmentIds(userId: string): Promise<string[]> {
+  const memberships = await prisma.departmentMember.findMany({
+    where: { userId, role: "manager" },
+    select: { departmentId: true },
+  });
+  return memberships.map((m) => m.departmentId);
 }
 
 const config: NextAuthConfig = {
@@ -75,13 +114,14 @@ const config: NextAuthConfig = {
         const loginId = (credentials.loginId as string) || null;
 
         const user = await findOrCreateUser(email, loginId, null);
+        const managedDeptIds = await getManagedDepartmentIds(user.id);
 
         return {
           id: user.id,
           email: user.email,
           name: user.name,
           role: user.role,
-          departmentId: user.departmentId,
+          managedDepartmentIds: managedDeptIds,
         };
       },
     }),
@@ -102,10 +142,6 @@ const config: NextAuthConfig = {
     // OAuthプロバイダー（Keycloak等）からのサインイン時に呼ばれる
     async signIn({ user, account, profile }) {
       if (account?.provider === "keycloak" && profile) {
-        // Keycloakから送られる属性
-        // - email: メールアドレス
-        // - preferred_username: UPN（WindowsログインID）
-        // - name: 表示名
         const email = profile.email as string;
         const loginId =
           (profile.preferred_username as string) ||
@@ -115,14 +151,13 @@ const config: NextAuthConfig = {
 
         if (!email) return false;
 
-        // DBにユーザーを作成/更新
         const dbUser = await findOrCreateUser(email, loginId, name);
+        const managedDeptIds = await getManagedDepartmentIds(dbUser.id);
 
-        // NextAuthのuserオブジェクトを更新
         user.id = dbUser.id;
         (user as { role?: string }).role = dbUser.role;
-        (user as { departmentId?: string }).departmentId =
-          dbUser.departmentId ?? undefined;
+        (user as { managedDepartmentIds?: string[] }).managedDepartmentIds =
+          managedDeptIds;
       }
       return true;
     },
@@ -131,7 +166,9 @@ const config: NextAuthConfig = {
       if (user) {
         token.id = user.id;
         token.role = (user as { role?: string }).role;
-        token.departmentId = (user as { departmentId?: string }).departmentId;
+        token.managedDepartmentIds = (
+          user as { managedDepartmentIds?: string[] }
+        ).managedDepartmentIds;
       }
 
       // Keycloakからの追加情報
@@ -148,8 +185,8 @@ const config: NextAuthConfig = {
       if (session.user) {
         session.user.id = token.id as string;
         (session.user as { role?: string }).role = token.role as string;
-        (session.user as { departmentId?: string }).departmentId =
-          token.departmentId as string;
+        (session.user as { managedDepartmentIds?: string[] }).managedDepartmentIds =
+          token.managedDepartmentIds as string[];
         (session.user as { loginId?: string }).loginId =
           token.loginId as string;
       }
